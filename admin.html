@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - HgShop</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="auth.js"></script>
+  <script defer src="admin.js"></script>
+  <script defer src="chatbot.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <a href="index.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit;">
+        <img id="siteLogoImg" src="images/logo.png" alt="HgShop" class="site-logo" onerror="this.style.display='none'"/>
+        <div class="logo-text-wrap">
+          <div class="logo-text">
+  <span class="logo-h">H</span><span class="logo-g">g</span><span class="logo-shop">Shop</span>
+</div>
+        </div>
+      </a>
+    </div>
+    <a href="login.html" class="link white">Đăng xuất</a>
+  </header>
+
+  <main class="container">
+    <h2>Quản lý đơn hàng & Hỗ trợ</h2>
+
+    <!-- Logo upload -->
+    <div class="card" style="margin-bottom:12px">
+      <h3>Logo cửa hàng</h3>
+      <div style="display:flex;gap:12px;align-items:center">
+        <img id="logoPreview" src="images/logo.png" alt="logo preview" style="height:64px;border-radius:8px;object-fit:contain" onerror="this.style.display='none'"/>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input id="logoInput" type="file" accept="image/*" />
+          <button id="downloadLogo" class="secondary">Tải logo về (để upload vào repo)</button>
+          <small>Ghi chú: Upload lưu tạm vào localStorage. Để thay logo thật trên GitHub Pages, tải file và commit vào images/logo.png</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thống kê doanh thu -->
+    <div class="card" style="margin-bottom:12px">
+      <h3>Thống kê doanh thu</h3>
+      <div id="revenueStats">
+        <!-- Sẽ được điền bằng JavaScript -->
+      </div>
+    </div>
+
+    <!-- Chat với khách hàng -->
+    <div class="card" style="margin-bottom:12px">
+      <h3>Hỗ trợ khách hàng</h3>
+      <div id="adminChat">
+        <div id="customerQuestions"></div>
+      </div>
+    </div>
+
+    <div id="ordersAdmin"></div>
+  </main>
+
+  <footer class="footer">
+    <div>© 2025 HgShop</div>
+  </footer>
+
+  <script>
+    // Hiển thị câu hỏi từ khách hàng
+    function loadCustomerQuestions() {
+      const adminMessages = JSON.parse(localStorage.getItem('adminMessages')) || {};
+      const container = document.getElementById('customerQuestions');
+      
+      if (Object.keys(adminMessages).length === 0) {
+        container.innerHTML = '<p>Chưa có câu hỏi nào từ khách hàng.</p>';
+        return;
+      }
+      
+      let html = '';
+      Object.entries(adminMessages).forEach(([email, questions]) => {
+        html += `<div style="margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px;">`;
+        html += `<h4>Khách hàng: ${email}</h4>`;
+        questions.forEach((q, index) => {
+          if (!q.answered) {
+            html += `
+              <div style="margin: 8px 0; padding: 8px; background: white; border-radius: 4px;">
+                <div><strong>Câu hỏi:</strong> ${q.question}</div>
+                <div><small>Thời gian: ${new Date(q.timestamp).toLocaleString('vi-VN')}</small></div>
+                <div class="chat-input">
+                  <input type="text" id="response-${email}-${index}" placeholder="Phản hồi..." />
+                  <button onclick="sendResponse('${email}', ${index})">Gửi</button>
+                </div>
+              </div>
+            `;
+          }
+        });
+        html += `</div>`;
+      });
+      
+      container.innerHTML = html;
+    }
+    
+    function sendResponse(email, questionIndex) {
+      const responseInput = document.getElementById(`response-${email}-${questionIndex}`);
+      const response = responseInput.value.trim();
+      
+      if (!response) {
+        alert('Vui lòng nhập phản hồi!');
+        return;
+      }
+      
+      // Lưu phản hồi
+      const adminMessages = JSON.parse(localStorage.getItem('adminMessages')) || {};
+      if (adminMessages[email] && adminMessages[email][questionIndex]) {
+        adminMessages[email][questionIndex].answered = true;
+        adminMessages[email][questionIndex].response = response;
+        adminMessages[email][questionIndex].responseTime = new Date().toISOString();
+      }
+      localStorage.setItem('adminMessages', JSON.stringify(adminMessages));
+      
+      // Thông báo cho khách hàng
+      const notes = JSON.parse(localStorage.getItem('notifications')) || {};
+      notes[email] = notes[email] || [];
+      notes[email].push(`Admin đã phản hồi câu hỏi của bạn: ${response}`);
+      localStorage.setItem('notifications', JSON.stringify(notes));
+      
+      alert('Đã gửi phản hồi cho khách hàng!');
+      loadCustomerQuestions();
+    }
+    
+    // Tải câu hỏi khi trang được load
+    document.addEventListener('DOMContentLoaded', loadCustomerQuestions);
+  </script>
+</body>
+</html>
