@@ -1,0 +1,23 @@
+HgShop - Static front-end (localStorage)
+---------------------------------------
+Hướng dẫn nhanh:
+1. Tạo thư mục HgShop.
+2. Tạo subfolder images/ chứa:
+   - logo.png (mặc định) (tùy chọn)
+   - default-avatar.png (ảnh avatar mặc định)
+   - qr.jpg (mã QR chuyển khoản)
+   - uploads/ (tùy bạn)
+3. Dán tất cả file HTML/CSS/JS phía trên.
+4. Thay sitekey reCAPTCHA trong login.html và register.html:
+   - data-sitekey="YOUR_SITE_KEY_HERE" -> sitekey thật
+   - LƯU Ý: reCAPTCHA cần verify server-side để an toàn (không bắt buộc cho test tĩnh).
+5. Mở index.html để kiểm tra, hoặc push lên GitHub repo và bật GitHub Pages.
+
+Tài khoản Admin (tự động tạo khi chạy):
+- Email: hoangne1404@gmail.com
+- Mật khẩu: 14042004
+- SĐT: 0343867095
+
+Ghi chú quan trọng:
+- Ảnh avatar & logo upload sẽ được lưu trong localStorage (dạng data URL). Browser không thể ghi file trực tiếp vào thư mục repo; nếu muốn thay logo/avatar "thực" trong repo, hãy nhấn "Tải về" rồi upload file vào folder images/ trong repo và commit.
+- Để bảo mật reCAPTCHA, cần implement server-side endpoint để verify token. Mình có thể hỗ trợ viết server Node.js khi bạn muốn.
