@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - HgShop</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+
+        // Import Firebase config
+        import "./firebase-config.js";
+
+        // Initialize Firebase
+        const app = initializeApp(window.firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Make Firebase objects globally available
+        window.firebaseAuth = auth;
+        window.firebaseDatabase = database;
+    </script>
+    
+    <script defer src="auth.js"></script>
+    <script defer src="captcha.js"></script>
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <!-- Login Form (Full Width) -->
+        <div class="auth-card-full">
+            <div class="auth-header">
+                <h1 class="auth-title">Đăng nhập</h1>
+                <p class="auth-subtitle">Nhập thông tin đăng nhập của bạn</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" id="email" class="form-input" placeholder="nhập email của bạn" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Mật khẩu</label>
+                    <input type="password" id="password" class="form-input" placeholder="nhập mật khẩu của bạn" required>
+                </div>
+
+                <!-- CAPTCHA Section -->
+                <div class="form-group">
+                    <label class="form-label">Mã xác nhận</label>
+                    <div class="captcha-container">
+                        <div id="captchaText" class="captcha-text">ABC123</div>
+                        <div class="captcha-buttons">
+                            <button type="button" id="refreshCaptcha" class="captcha-btn" title="Làm mới mã">
+                                🔄
+                            </button>
+                            <button type="button" id="voiceCaptcha" class="captcha-btn" title="Đọc mã CAPTCHA">
+                                🔊
+                            </button>
+                        </div>
+                    </div>
+                    <input type="text" id="captchaInput" class="form-input" placeholder="Nhập mã xác nhận" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="remember-label">
+                        <input type="checkbox" id="rememberMe" style="margin-right: 8px;"> Ghi nhớ đăng nhập (30 ngày)
+                    </label>
+                </div>
+
+                <button type="submit" class="btn primary auth-btn">Đăng nhập</button>
+            </form>
+
+            <div class="auth-links">
+                <p class="muted">Chưa có tài khoản? 
+                    <a href="register.html">Tạo tài khoản mới</a>
+                </p>
+                <p class="muted" style="margin-top: 1rem;">
+                    <a href="forgot-password.html">Quên mật khẩu?</a>
+                </p>
+                <p class="muted" style="margin-top: 1rem;">
+                    <a href="terms.html">Điều khoản dịch vụ</a> • 
+                    <a href="privacy.html">Chính sách bảo mật</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

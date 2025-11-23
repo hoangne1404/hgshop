@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Firebase Connection</title>
+</head>
+<body>
+    <h1>Test Firebase Connection</h1>
+    <button id="testBtn">Test Firebase Write</button>
+    <div id="result"></div>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+
+        // Import Firebase config
+        import "./firebase-config.js";
+
+        // Initialize Firebase
+        const app = initializeApp(window.firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Make Firebase objects globally available
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDatabase = database;
+
+        // Test Firebase initialization
+        document.getElementById('testFirebase').addEventListener('click', function() {
+            const resultDiv = document.getElementById('testResult');
+            try {
+                if (app && auth && database) {
+                    resultDiv.innerHTML = '<p class="success">✅ Firebase initialized successfully!</p>';
+                    resultDiv.innerHTML += '<p class="info">App: ' + !!app + '</p>';
+                    resultDiv.innerHTML += '<p class="info">Auth: ' + !!auth + '</p>';
+                    resultDiv.innerHTML += '<p class="info">Database: ' + !!database + '</p>';
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ Firebase initialization failed!</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>
