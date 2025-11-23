@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - HgShop</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+
+        // Import Firebase config
+        import "./firebase-config.js";
+
+        // Initialize Firebase
+        const app = initializeApp(window.firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Make Firebase objects globally available
+        window.firebaseAuth = auth;
+        window.firebaseDatabase = database;
+    </script>
+    
+    <script defer src="auth.js"></script>
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <!-- Register Form (Full Width) -->
+        <div class="auth-card-full">
+            <div class="auth-header">
+                <h1 class="auth-title">Đăng ký</h1>
+                <p class="auth-subtitle">Điền thông tin để tạo tài khoản</p>
+            </div>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="r_name" class="form-label">Họ và tên</label>
+                    <input type="text" id="r_name" class="form-input" placeholder="Nhập họ và tên" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="r_email" class="form-label">Email</label>
+                    <input type="email" id="r_email" class="form-input" placeholder="Nhập email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="r_phone" class="form-label">Số điện thoại</label>
+                    <input type="tel" id="r_phone" class="form-input" placeholder="Nhập số điện thoại">
+                </div>
+
+                <div class="form-group">
+                    <label for="r_password" class="form-label">Mật khẩu</label>
+                    <input type="password" id="r_password" class="form-input" placeholder="Nhập mật khẩu (ít nhất 6 ký tự)" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="r_confirm_password" class="form-label">Xác nhận mật khẩu</label>
+                    <input type="password" id="r_confirm_password" class="form-input" placeholder="Nhập lại mật khẩu" required>
+                </div>
+
+                <button type="submit" class="btn primary auth-btn">Đăng ký</button>
+            </form>
+
+            <div class="auth-links">
+                <p class="muted">Đã có tài khoản? 
+                    <a href="login.html">Đăng nhập ngay</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

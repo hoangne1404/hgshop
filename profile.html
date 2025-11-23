@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài khoản của tôi - HgShop</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+
+        // Import Firebase config
+        import "./firebase-config.js";
+
+        // Initialize Firebase
+        const app = initializeApp(window.firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Make Firebase objects globally available
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDatabase = database;
+
+        // Authentication state listener
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Load user data
+                const userRef = ref(database, 'users/' + user.uid);
+                onValue(userRef, (snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        // Save user data to localStorage
+                        localStorage.setItem('currentUser', JSON.stringify({
+                            uid: user.uid,
+                            email: user.email,
+                            ...userData
+                        }));
+                    }
+                });
+            } else {
+                // Redirect to login if not authenticated
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+    
+    <script defer src="auth.js"></script>
+    <script defer src="script.js"></script>
+    <script defer src="cart.js"></script>
+    <script defer src="account.js"></script>
+    <script defer src="cloudinary-config.js"></script>
+    <script defer src="cloudinary.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="navbar">
+        <div class="logo">
+            <a href="index.html" style="color: white; text-decoration: none;">HgShop</a>
+        </div>
+        
+        <nav class="nav-links">
+            <a href="index.html">Trang chủ</a>
+            <a href="products.html">Sản phẩm</a>
+            <a href="contact.html">Liên hệ</a>
+            <a href="#" class="cart">Giỏ hàng 🛒</a>
+        </nav>
+        
+        <div class="topbar-icons">
+            <button id="notifyBtn" class="icon-btn">
+                <span class="material-icons">notifications</span>
+                <span id="notificationBadge" class="badge">0</span>
+            </button>
+            
+            <button id="cartBtn" class="icon-btn">
+                <span class="material-icons cart-icon">shopping_cart</span>
+                <span id="cartCount" class="badge">0</span>
+            </button>
+            
+            <div class="avatar-wrapper">
+                <img id="avatarIcon" src="images/default-avatar.png" alt="Avatar" class="avatar-icon">
+            </div>
+        </div>
+    </header>
+
+    <!-- Notification Tooltip -->
+    <div id="notifyTooltip" class="tooltip hidden">
+        <div class="tooltip-header">
+            <h3>Thông báo</h3>
+            <button id="closeNotify" class="close-btn">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div id="notificationList" class="notification-list">
+            <p>Không có thông báo mới</p>
+        </div>
+    </div>
+    
+    <!-- Account Menu -->
+    <div id="accountMenu" class="account-menu hidden">
+        <a href="profile.html" class="menu-item active">
+            <span class="material-icons">person</span>
+            Tài khoản của tôi
+        </a>
+        <a href="orders.html" class="menu-item">
+            <span class="material-icons">receipt</span>
+            Đơn hàng của bạn
+        </a>
+        <a id="becomeSellerLink" href="become-seller.html" class="menu-item">
+            <span class="material-icons">store</span>
+            <span id="sellerMenuText">Trở thành người bán</span>
+        </a>
+        <hr>
+        <button id="logoutBtn" class="menu-item logout">
+            <span class="material-icons">logout</span>
+            <span>Đăng xuất</span>
+        </button>
+    </div>
+    
+    <main>
+        <section class="profile-page">
+            <div class="container">
+                <h1>Tài khoản của tôi</h1>
+                
+                <div class="profile-content">
+                    <div class="profile-sidebar">
+                        <div class="profile-card">
+                            <div class="profile-avatar">
+                                <img id="profileAvatar" src="images/default-avatar.png" alt="Avatar">
+                                <button id="changeAvatarBtn" class="btn secondary">Đổi ảnh</button>
+                                <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                            </div>
+                            <div class="profile-info">
+                                <h3 id="profileName">Người dùng</h3>
+                                <p id="profileEmail">user@example.com</p>
+                            </div>
+                        </div>
+                        
+                        <nav class="profile-nav">
+                            <a href="#profile-info" class="nav-item active">Thông tin tài khoản</a>
+                            <a href="#address" class="nav-item">Địa chỉ</a>
+                            <a href="#security" class="nav-item">Bảo mật</a>
+                            <a href="orders.html" class="nav-item">Đơn hàng của tôi</a>
+                        </nav>
+                    </div>
+                    
+                    <div class="profile-main">
+                        <div id="profile-info" class="profile-section active">
+                            <h2>Thông tin tài khoản</h2>
+                            <form id="profileForm">
+                                <div class="form-group">
+                                    <label for="fullName">Họ và tên</label>
+                                    <input type="text" id="fullName" name="fullName">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" id="email" name="email" readonly>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="phone">Số điện thoại</label>
+                                    <input type="tel" id="phone" name="phone">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="birthDate">Ngày sinh</label>
+                                    <input type="date" id="birthDate" name="birthDate">
+                                </div>
+                                
+                                <button type="submit" class="btn primary">Lưu thay đổi</button>
+                            </form>
+                        </div>
+                        
+                        <div id="address" class="profile-section">
+                            <h2>Địa chỉ</h2>
+                            <form id="addressForm">
+                                <div class="form-group">
+                                    <label for="street">Địa chỉ</label>
+                                    <input type="text" id="street" name="street">
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="city">Thành phố</label>
+                                        <input type="text" id="city" name="city">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="zipCode">Mã bưu chính</label>
+                                        <input type="text" id="zipCode" name="zipCode">
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn primary">Lưu địa chỉ</button>
+                            </form>
+                        </div>
+                        
+                        <div id="security" class="profile-section">
+                            <h2>Bảo mật</h2>
+                            <form id="securityForm">
+                                <div class="form-group">
+                                    <label for="currentPassword">Mật khẩu hiện tại</label>
+                                    <input type="password" id="currentPassword" name="currentPassword">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="newPassword">Mật khẩu mới</label>
+                                    <input type="password" id="newPassword" name="newPassword">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+                                    <input type="password" id="confirmPassword" name="confirmPassword">
+                                </div>
+                                
+                                <button type="submit" class="btn primary">Đổi mật khẩu</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Cart Sidebar -->
+    <div id="cartSidebar" class="cart-sidebar hidden">
+        <div class="cart-header">
+            <h3>Giỏ hàng</h3>
+            <button id="closeCart" class="close-btn">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div id="cartItems" class="cart-items">
+            <!-- Cart items will be populated here -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Tổng cộng:</span>
+                <span id="cartTotal">0đ</span>
+            </div>
+            <button id="checkoutBtn" class="btn primary">Thanh toán</button>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay" class="overlay hidden"></div>
+
+    <!-- About / Footer -->
+    <section class="about-section" id="contact">
+        <div class="container narrow">
+            <h2>Giới thiệu về HgShop</h2>
+            <p>HgShop là nền tảng mua sắm linh kiện máy tính, laptop và phụ kiện công nghệ chất lượng.</p>
+            
+            <div class="about-content">
+                <div class="about-info">
+                    <p><strong>Mua bán linh kiện máy tính, laptop uy tín chất lượng</strong></p>
+                    <ul>
+                        <li>🏠 Địa chỉ: 18 Louis VI, Hoàng Mai, Hoàng Văn Thụ, Hà Nội</li>
+                        <li>📞 Số điện thoại: 0343867095</li>
+                        <li>👤 Thành viên: Nguyễn Nhật Hoàng<br>📧 Gmail: nguyennhathoangne@gmail.com</li>
+                    </ul>
+                </div>
+                
+                <div class="about-links">
+                    <div class="footer-section">
+                        <h4>Liên kết</h4>
+                        <ul>
+                            <li><a href="index.html">Trang chủ</a></li>
+                            <li><a href="terms.html">Điều khoản</a></li>
+                            <li><a href="privacy.html">Bảo mật</a></li>
+                            <li><a href="contact.html">Liên hệ</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4>Theo dõi chúng tôi</h4>
+                        <div class="social-links">
+                            <a href="https://www.facebook.com/hvoaanng" target="_blank" class="social-link">
+                                <span class="material-icons">facebook</span>
+                            </a>
+                            <a href="https://www.instagram.com/hgne1404" target="_blank" class="social-link">
+                                <span class="material-icons">photo_camera</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <p>© 2025 HgShop. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </section>
+    
+    <script>
+        // Profile page initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Profile page loaded');
+            
+            // Load user data
+            loadProfileData();
+            
+            // Set up event listeners
+            setupEventListeners();
+        });
+        
+        // Load profile data from localStorage
+        function loadProfileData() {
+            const cur = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            console.log('Current user data:', cur);
+            
+            if (!cur) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Update profile avatar
+            const profileAvatar = document.getElementById('profileAvatar');
+            const avatarIcon = document.getElementById('avatarIcon');
+            if (profileAvatar && cur.avatarData) {
+                profileAvatar.src = cur.avatarData;
+                console.log('Profile avatar updated:', cur.avatarData);
+            }
+            if (avatarIcon && cur.avatarData) {
+                avatarIcon.src = cur.avatarData;
+                console.log('Header avatar updated:', cur.avatarData);
+            }
+            
+            // Update profile info
+            document.getElementById('profileName').textContent = cur.name || 'Người dùng';
+            document.getElementById('profileEmail').textContent = cur.email || '';
+            
+            // Fill form fields
+            document.getElementById('fullName').value = cur.name || '';
+            document.getElementById('email').value = cur.email || '';
+            document.getElementById('phone').value = cur.phone || '';
+            document.getElementById('birthDate').value = cur.birthDate || '';
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            console.log('Setting up event listeners');
+            
+            // Change avatar button
+            const changeAvatarBtn = document.getElementById('changeAvatarBtn');
+            const avatarInput = document.getElementById('avatarInput');
+            
+            if (changeAvatarBtn && avatarInput) {
+                console.log('Avatar elements found');
+                
+                changeAvatarBtn.addEventListener('click', function() {
+                    console.log('Change avatar button clicked');
+                    avatarInput.click();
+                });
+                
+                avatarInput.addEventListener('change', function(e) {
+                    console.log('Avatar input changed', e.target.files);
+                    if (e.target.files && e.target.files[0]) {
+                        const file = e.target.files[0];
+                        console.log('Selected file:', file);
+                        
+                        // Check if file is an image
+                        if (!file.type.startsWith('image/')) {
+                            alert('Vui lòng chọn một file ảnh!');
+                            return;
+                        }
+                        
+                        // Use the updateAvatar function from auth.js
+                        if (window.updateAvatar) {
+                            console.log('Calling updateAvatar function');
+                            window.updateAvatar(file);
+                        } else {
+                            console.error('updateAvatar function not available');
+                            alert('Chức năng đổi ảnh chưa sẵn sàng. Vui lòng thử lại sau.');
+                        }
+                    }
+                });
+            } else {
+                console.log('Avatar elements not found');
+            }
+            
+            // Profile form submission
+            const profileForm = document.getElementById('profileForm');
+            if (profileForm) {
+                profileForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const userData = {
+                        name: document.getElementById('fullName').value,
+                        phone: document.getElementById('phone').value,
+                        birthDate: document.getElementById('birthDate').value
+                    };
+                    
+                    console.log('Updating profile with data:', userData);
+                    
+                    // Use the updateProfile function from auth.js
+                    if (window.updateProfile) {
+                        window.updateProfile(userData);
+                    } else {
+                        console.error('updateProfile function not available');
+                    }
+                });
+            }
+            
+            // Security form submission
+            const securityForm = document.getElementById('securityForm');
+            if (securityForm) {
+                securityForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const currentPassword = document.getElementById('currentPassword').value;
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    
+                    console.log('Password change requested:', {currentPassword, newPassword, confirmPassword});
+                    
+                    if (newPassword !== confirmPassword) {
+                        alert('Mật khẩu xác nhận không khớp!');
+                        return;
+                    }
+                    
+                    if (newPassword.length < 6) {
+                        alert('Mật khẩu mới phải có ít nhất 6 ký tự!');
+                        return;
+                    }
+                    
+                    // Use the updatePassword function from auth.js
+                    if (window.updateUserPassword) {
+                        console.log('Calling updateUserPassword function');
+                        window.updateUserPassword(currentPassword, newPassword);
+                    } else {
+                        console.error('updateUserPassword function not available');
+                        alert('Chức năng đổi mật khẩu chưa sẵn sàng. Vui lòng thử lại sau.');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
