@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang chủ - HgShop</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+
+        // Import Firebase config
+        import "./firebase-config.js";
+        
+        // Initialize Firebase
+        const app = initializeApp(window.firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        
+        // Make Firebase objects globally available
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDatabase = database;
+        
+        console.log('Firebase initialized successfully');
+        
+        // Listen for authentication state changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("User is signed in:", user);
+                // Load user data
+                const userRef = ref(database, 'users/' + user.uid);
+                onValue(userRef, (snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        // Save user data to localStorage
+                        localStorage.setItem('currentUser', JSON.stringify({
+                            uid: user.uid,
+                            email: user.email,
+                            ...userData
+                        }));
+                        
+                        // Dispatch a custom event to notify that user data has been updated
+                        window.dispatchEvent(new CustomEvent('currentUserUpdated', { detail: userData }));
+                    }
+                });
+            } else {
+                console.log("No user is signed in");
+                // Clear user data from localStorage
+                localStorage.removeItem('currentUser');
+            }
+        });
+        
+        // Listen for real-time updates to products
+        window.addEventListener('DOMContentLoaded', function() {
+            try {
+                const productsRef = ref(database, 'products');
+                onValue(productsRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        // Convert Firebase object to array
+                        const products = Object.keys(data).map(key => ({
+                            id: key,
+                            ...data[key]
+                        }));
+                        
+                        // Make products globally available
+                        window.firebaseProducts = products;
+                        
+                        // Dispatch a custom event to notify script.js that products have been updated
+                        window.dispatchEvent(new CustomEvent('firebaseProductsUpdated', { detail: products }));
+                    } else {
+                        console.log("No products found in Firebase");
+                    }
+                }, (error) => {
+                    console.error("Error setting up real-time listener for products:", error);
+                });
+            } catch (error) {
+                console.error("Error setting up Firebase listener:", error);
+            }
+        });
+    </script>
+    
+    <script defer src="auth.js"></script>
+    <script defer src="script.js"></script>
+    <script defer src="cart.js"></script>
+    <script defer src="chatbot.js"></script>
+</head>
+<body>
+    <!-- Notification Tooltip -->
+    <div id="notifyTooltip" class="tooltip hidden">
+        <div class="tooltip-header">
+            <h3>Thông báo</h3>
+            <button id="closeNotify" class="close-btn">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div id="notificationList" class="notification-list">
+            <p>Không có thông báo mới</p>
+        </div>
+    </div>
+    
+    <!-- Header -->
+    <header class="navbar">
+        <div class="logo">
+            <a href="index.html" style="color: white; text-decoration: none;">HgShop</a>
+        </div>
+        
+        <nav class="nav-links">
+            <a class="active" href="index.html">Trang chủ</a>
+            <a href="products.html">Sản phẩm</a>
+            <a href="contact.html">Liên hệ</a>
+        </nav>
+        
+        <div class="topbar-icons">
+            <button id="notifyBtn" class="icon-btn">
+                <span class="material-icons">notifications</span>
+                <span id="notificationBadge" class="badge">0</span>
+            </button>
+            
+            <button id="cartBtn" class="icon-btn">
+                <span class="material-icons cart-icon">shopping_cart</span>
+                <span id="cartCount" class="badge">0</span>
+            </button>
+            
+            <div class="avatar-wrapper">
+                <img id="avatarIcon" src="images/default-avatar.png" alt="Avatar" class="avatar-icon">
+            </div>
+        </div>
+    </header>
+
+    <!-- Account Menu -->
+    <div id="accountMenu" class="account-menu hidden">
+        <a href="profile.html" class="menu-item">
+            <span class="material-icons">person</span>
+            Tài khoản của tôi
+        </a>
+        <a href="orders.html" class="menu-item">
+            <span class="material-icons">receipt</span>
+            Đơn hàng của bạn
+        </a>
+        <a id="becomeSellerLink" href="become-seller.html" class="menu-item">
+            <span class="material-icons">store</span>
+            <span id="sellerMenuText">Trở thành người bán</span>
+        </a>
+        <hr>
+        <button id="logoutBtn" class="menu-item logout">
+            <span class="material-icons">logout</span>
+            <span>Đăng xuất</span>
+        </button>
+    </div>
+    
+    <main>
+        <!-- HERO BANNER (Full Screen) -->
+        <section class="hero-banner">
+            <div class="hero-image-container">
+                <img id="hero-image" src="images/default-product.png" alt="Sản phẩm nổi bật" class="hero-image active">
+            </div>
+            <div class="hero-content">
+                <div class="hero-info">
+                    <h1 id="hero-title" class="hero-title">Tên sản phẩm</h1>
+                    <div class="hero-meta">
+                        <span id="hero-sales" class="sales">Đã bán: 0</span>
+                        <span id="hero-rating" class="rating">★★★★★</span>
+                    </div>
+                    <p id="hero-desc" class="hero-description">Mô tả ngắn sản phẩm...</p>
+                    <div class="hero-shop-left">
+                        <span id="hero-shop">Cửa hàng: ...</span>
+                    </div>
+                    <div class="hero-actions">
+                        <button class="btn secondary" id="hero-cart-btn">
+                            <span class="material-icons">add_shopping_cart</span>
+                            Thêm vào giỏ hàng
+                        </button>
+                        <button class="btn primary" id="hero-buy-btn">
+                            <span class="material-icons">shopping_cart</span>
+                            Mua ngay
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Cart Sidebar -->
+    <div id="cartSidebar" class="cart-sidebar hidden">
+        <div class="cart-header">
+            <h3>Giỏ hàng</h3>
+            <button id="closeCart" class="close-btn">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div id="cartItems" class="cart-items">
+            <!-- Cart items will be populated here -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Tổng cộng:</span>
+                <span id="cartTotal">0đ</span>
+            </div>
+            <button id="checkoutBtn" class="btn primary">Thanh toán</button>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay" class="overlay hidden"></div>
+
+    <!-- FEATURED PRODUCTS SLIDER (Bottom Right) -->
+    <div class="featured-products-overlay">
+        <div class="featured-header">
+            <h2>Sản phẩm nổi bật</h2>
+        </div>
+        
+        <div class="carousel-container">
+            <button id="prevBtn" class="arrow left-arrow">‹</button>
+            <div class="carousel-viewport">
+                <div id="carousel" class="carousel">
+                    <!-- Product cards inserted by JS -->
+                </div>
+            </div>
+            <button id="nextBtn" class="arrow right-arrow">›</button>
+        </div>
+    </div>
+    
+    <!-- About / Footer -->
+    <section class="about-section" id="contact">
+        <div class="container narrow">
+            <h2>Giới thiệu về HgShop</h2>
+            <p>HgShop là nền tảng mua sắm linh kiện máy tính, laptop và phụ kiện công nghệ chất lượng.</p>
+            
+            <div class="about-content">
+                <div class="about-info">
+                    <p><strong>Mua bán linh kiện máy tính, laptop uy tín chất lượng</strong></p>
+                    <ul>
+                        <li>🏠 Địa chỉ: 18 Louis VI, Hoàng Mai, Hoàng Văn Thụ, Hà Nội</li>
+                        <li>📞 Số điện thoại: 0343867095</li>
+                        <li>👤 Thành viên: Nguyễn Nhật Hoàng<br>📧 Gmail: nguyennhathoangne@gmail.com</li>
+                    </ul>
+                </div>
+                
+                <div class="about-links">
+                    <div class="footer-section">
+                        <h4>Liên kết</h4>
+                        <ul>
+                            <li><a href="index.html">Trang chủ</a></li>
+                            <li><a href="terms.html">Điều khoản</a></li>
+                            <li><a href="privacy.html">Bảo mật</a></li>
+                            <li><a href="contact.html">Liên hệ</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4>Theo dõi chúng tôi</h4>
+                        <div class="social-links">
+                            <a href="https://www.facebook.com/hvoaanng" target="_blank" class="social-link">
+                                <span class="material-icons">facebook</span>
+                            </a>
+                            <a href="https://www.instagram.com/hgne1404" target="_blank" class="social-link">
+                                <span class="material-icons">photo_camera</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <p>© 2025 HgShop. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </section>
+    
+    <script>
+    // Current featured product
+    let currentFeaturedProduct = null;
+    
+    // Expose currentFeaturedProduct globally
+    window.currentFeaturedProduct = currentFeaturedProduct;
+    
+    // Function to update hero banner with featured product
+    function updateHeroBanner(product) {
+        if (!product) return;
+        
+        currentFeaturedProduct = product;
+        // Also update the global reference
+        window.currentFeaturedProduct = product;
+        
+        document.getElementById('hero-title').textContent = product.name || 'Tên sản phẩm';
+        document.getElementById('hero-desc').textContent = product.description || 'Mô tả ngắn sản phẩm...';
+        document.getElementById('hero-sales').textContent = 'Đã bán: ' + (product.sales || getLocalSalesCount(product.id) || 0);
+        document.getElementById('hero-shop').textContent = 'Cửa hàng: ' + (product.seller || '...');
+        
+        // Add fade effect for image transition
+        const heroImage = document.getElementById('hero-image');
+        heroImage.classList.remove('active');
+        
+        // Set new image source after a short delay for fade effect
+        setTimeout(function() {
+            heroImage.src = product.image && product.image.startsWith('http') ? product.image : (product.image ? 'images/sanpham/' + product.image : 'images/default-product.png');
+            heroImage.onload = function() {
+                heroImage.classList.add('active');
+            };
+            heroImage.onerror = function() {
+                this.src = 'images/default-product.png';
+                this.classList.add('active');
+            };
+        }, 250); // Delay to allow fade out
+        
+        // Update rating display
+        const ratingElement = document.getElementById('hero-rating');
+        if (ratingElement) {
+            const rating = product.rating || 0;
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 >= 0.5;
+            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+            ratingElement.textContent = '★'.repeat(fullStars) + (hasHalfStar ? '★' : '') + '☆'.repeat(emptyStars);
+        }
+    }
+    
+    // Function to render featured products carousel
+    function renderFeaturedProducts(products) {
+        const carousel = document.getElementById('carousel');
+        if (!carousel) return;
+        
+        if (!products || products.length === 0) {
+            carousel.innerHTML = '<div class="empty-carousel">Không có sản phẩm nổi bật</div>';
+            return;
+        }
+        
+        // Remove sorting by sales - keep products in their natural order
+        const sortedProducts = [...products]; // Just copy the array without sorting
+    
+        carousel.innerHTML = sortedProducts.map(product => `
+            <div class="carousel-item" data-id="${product.id}">
+                <img src="${product.image && product.image.startsWith('http') ? product.image : (product.image ? 'images/sanpham/' + product.image : 'images/default-product.png')}" 
+                     alt="${product.name}" 
+                     class="product-image" 
+                     onerror="this.src='images/default-product.png'">
+                <div class="product-info">
+                    <h4 class="product-name">${product.name}</h4>
+                    <div class="product-meta">
+                        <span class="product-sales">Đã bán: ${product.sales || getLocalSalesCount(product.id) || 0}</span>
+                        <span class="product-stock">Còn: ${product.quantity || 0}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        // Add click event to each product card
+        document.querySelectorAll('.carousel-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const productId = this.getAttribute('data-id');
+                const product = sortedProducts.find(p => p.id == productId);
+                if (product) {
+                    updateHeroBanner(product);
+                    
+                    // Add active class to selected item
+                    document.querySelectorAll('.carousel-item').forEach(i => {
+                        i.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                }
+            });
+        });
+        
+        // Set first product as active
+        if (sortedProducts.length > 0) {
+            document.querySelector('.carousel-item').classList.add('active');
+            // Update hero with first product
+            updateHeroBanner(sortedProducts[0]);
+        }
+    }
+    
+    // Helper function to render star rating
+    function renderStarRating(rating) {
+      const fullStars = Math.floor(rating);
+      const hasHalfStar = rating % 1 >= 0.5;
+      const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+      return '★'.repeat(fullStars) + (hasHalfStar ? '★' : '') + '☆'.repeat(emptyStars);
+    }
+    
+    // Function to get local sales count for a product
+    function getLocalSalesCount(productId) {
+      try {
+        let localSales = JSON.parse(localStorage.getItem('localProductSales') || '{}');
+        return localSales[productId] || 0;
+      } catch (error) {
+        console.error('Error getting local sales count:', error);
+        return 0;
+      }
+    }
+    
+    // Simple direct event handlers for avatar and product cards
+    document.addEventListener('DOMContentLoaded', function() {
+        // Listen for Firebase products update event
+        window.addEventListener('firebaseProductsUpdated', function(event) {
+            const products = event.detail ? Object.values(event.detail) : [];
+            renderFeaturedProducts(products);
+        });
+        
+        // If products are already available, update the display
+        if (window.firebaseProducts) {
+            const products = Object.values(window.firebaseProducts);
+            renderFeaturedProducts(products);
+        }
+        
+        // Load user data and update avatar
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        if (currentUser) {
+            // Update avatar image
+            const avatarIcon = document.getElementById('avatarIcon');
+            if (avatarIcon && currentUser.avatarData) {
+                avatarIcon.src = currentUser.avatarData;
+            }
+            
+            // Update seller menu item if user is already a seller
+            const becomeSellerLink = document.getElementById('becomeSellerLink');
+            const sellerMenuText = document.getElementById('sellerMenuText');
+            if (becomeSellerLink && sellerMenuText) {
+                if (currentUser.role === 'seller' || currentUser.role === 'admin') {
+                    sellerMenuText.textContent = 'Cửa hàng của tôi';
+                    becomeSellerLink.href = 'seller.html';
+                }
+            }
+        }
+
+        // Initialize cart count with a small delay to ensure all scripts are loaded
+        setTimeout(function() {
+            if (typeof window.updateCartCount === 'function') {
+                window.updateCartCount();
+            }
+        }, 100);
+
+        // Avatar menu toggle
+        const avatarIcon = document.getElementById('avatarIcon');
+        const accountMenu = document.getElementById('accountMenu');
+        
+        if (avatarIcon && accountMenu) {
+            avatarIcon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                accountMenu.classList.toggle('hidden');
+            });
+            
+            // Close account menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!avatarIcon.contains(e.target) && !accountMenu.contains(e.target)) {
+                    accountMenu.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Notification tooltip toggle
+        const notifyBtn = document.getElementById('notifyBtn');
+        const notifyTooltip = document.getElementById('notifyTooltip');
+        const closeNotify = document.getElementById('closeNotify');
+        
+        if (notifyBtn && notifyTooltip) {
+            notifyBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                notifyTooltip.classList.toggle('hidden');
+            });
+            
+            if (closeNotify) {
+                closeNotify.addEventListener('click', function() {
+                    notifyTooltip.classList.add('hidden');
+                });
+            }
+            
+            // Close notification tooltip when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!notifyBtn.contains(e.target) && !notifyTooltip.contains(e.target)) {
+                    notifyTooltip.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Cart sidebar toggle
+        const cartBtn = document.getElementById('cartBtn');
+        const cartSidebar = document.getElementById('cartSidebar');
+        const closeCart = document.getElementById('closeCart');
+        const overlay = document.getElementById('overlay');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+
+        if (cartBtn && cartSidebar && overlay) {
+            cartBtn.addEventListener('click', function() {
+                cartSidebar.classList.remove('hidden');
+                overlay.classList.remove('hidden');
+                // Render cart items when opening
+                if (typeof window.renderCartItems === 'function') {
+                    window.renderCartItems();
+                }
+            });
+            
+            closeCart.addEventListener('click', function() {
+                cartSidebar.classList.add('hidden');
+                overlay.classList.add('hidden');
+            });
+            
+            overlay.addEventListener('click', function() {
+                cartSidebar.classList.add('hidden');
+                overlay.classList.add('hidden');
+            });
+            
+            if (checkoutBtn) {
+                checkoutBtn.addEventListener('click', function() {
+                    window.location.href = 'checkout.html';
+                });
+            }
+        }
+        
+        // Hero banner actions
+        const heroCartBtn = document.getElementById('hero-cart-btn');
+        const heroBuyBtn = document.getElementById('hero-buy-btn');
+        
+        if (heroCartBtn) {
+            heroCartBtn.addEventListener('click', function() {
+                if (currentFeaturedProduct) {
+                    // Check if product is in stock
+                    if (currentFeaturedProduct.quantity <= 0) {
+                        alert('Sản phẩm này hiện đã hết hàng!');
+                        return;
+                    }
+                    
+                    if (typeof window.addToCart === 'function') {
+                        window.addToCart(currentFeaturedProduct.id, 1);
+                    } else {
+                        alert('Sản phẩm đã được thêm vào giỏ hàng!');
+                    }
+                } else {
+                    alert('Vui lòng chọn một sản phẩm trước!');
+                }
+            });
+        }
+        
+        if (heroBuyBtn) {
+            heroBuyBtn.addEventListener('click', function() {
+                if (currentFeaturedProduct) {
+                    // Check if product is in stock
+                    if (currentFeaturedProduct.quantity <= 0) {
+                        alert('Sản phẩm này hiện đã hết hàng!');
+                        return;
+                    }
+                    
+                    if (typeof window.buyNow === 'function') {
+                        window.buyNow(currentFeaturedProduct.id);
+                    } else {
+                        // Add to cart and go to checkout
+                        if (typeof window.addToCart === 'function') {
+                            window.addToCart(currentFeaturedProduct.id, 1);
+                        }
+                        window.location.href = 'checkout.html';
+                    }
+                } else {
+                    alert('Vui lòng chọn một sản phẩm trước!');
+                }
+            });
+        }
+        
+        // Auto-rotate banner every 7 seconds
+        let bannerRotationInterval;
+        function startBannerRotation() {
+            if (bannerRotationInterval) {
+                clearInterval(bannerRotationInterval);
+            }
+            
+            bannerRotationInterval = setInterval(function() {
+                const items = document.querySelectorAll('.carousel-item');
+                if (items.length > 0) {
+                    // Find currently active item
+                    const activeItem = document.querySelector('.carousel-item.active');
+                    let currentIndex = Array.from(items).indexOf(activeItem);
+                    
+                    // Move to next item (loop back to first if at end)
+                    let nextIndex = (currentIndex + 1) % items.length;
+                    
+                    // Remove active class from current item
+                    if (activeItem) {
+                        activeItem.classList.remove('active');
+                    }
+                    
+                    // Add active class to next item
+                    const nextItem = items[nextIndex];
+                    if (nextItem) {
+                        nextItem.classList.add('active');
+                        
+                        // Update hero banner with next product
+                        const productId = nextItem.getAttribute('data-id');
+                        // Keep products in their natural order (no sorting)
+                        const products = window.firebaseProducts ? Object.values(window.firebaseProducts) : [];
+                        const product = products.find(p => p.id == productId);
+                        if (product) {
+                            updateHeroBanner(product);
+                        }
+                        
+                        // Move carousel to show the active item (smooth, one by one movement)
+                        scrollToActiveItem(nextIndex);
+                    }
+                }
+            }, 7000); // 7 seconds
+        }
+
+        // Function to scroll carousel to show the active item
+        function scrollToActiveItem(activeIndex) {
+            const items = document.querySelectorAll('.carousel-item');
+            if (items.length === 0) return;
+            
+            const carousel = document.getElementById('carousel');
+            if (!carousel) return;
+            
+            // Move carousel one item at a time for smooth movement
+            const itemWidth = items[0].offsetWidth + 20; // width + gap (20px from CSS)
+            carousel.style.transform = `translateX(-${activeIndex * itemWidth}px)`;
+        }
+
+        // Start banner rotation after products are loaded
+        window.addEventListener('firebaseProductsUpdated', function(event) {
+            setTimeout(startBannerRotation, 1000); // Start after 1 second
+        });
+
+        // Also start if products are already available
+        if (window.firebaseProducts) {
+            setTimeout(startBannerRotation, 1000); // Start after 1 second
+        }
+
+        // Featured products carousel
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const carousel = document.getElementById('carousel');
+
+        if (prevBtn && nextBtn && carousel) {
+            let currentIndex = 0;
+            let items = []; // Will be updated when products are rendered
+            
+            // Function to update carousel position
+            function updateCarousel() {
+                if (items.length === 0) return;
+                
+                const itemWidth = items[0].offsetWidth + 20; // width + gap (20px from CSS)
+                carousel.style.transform = `translateX(-${currentIndex * itemWidth}px)`;
+            }
+            
+            // Function to update items reference
+            function updateItems() {
+                items = document.querySelectorAll('.carousel-item');
+            }
+            
+            prevBtn.addEventListener('click', function() {
+                // Move one position to the left (loop if at beginning)
+                if (currentIndex > 0) {
+                    currentIndex--;
+                } else {
+                    // Go to the last item
+                    currentIndex = items.length - 1;
+                }
+                updateCarousel();
+                updateActiveItemFromCarousel();
+            });
+            
+            nextBtn.addEventListener('click', function() {
+                // Move one position to the right (loop if at end)
+                if (currentIndex < items.length - 1) {
+                    currentIndex++;
+                } else {
+                    // Go back to first position
+                    currentIndex = 0;
+                }
+                updateCarousel();
+                updateActiveItemFromCarousel();
+            });
+            
+            // Function to update active item based on carousel position
+            function updateActiveItemFromCarousel() {
+                const items = document.querySelectorAll('.carousel-item');
+                if (items.length > 0) {
+                    // Remove active class from all items
+                    items.forEach(item => item.classList.remove('active'));
+                    
+                    // Make the current item active
+                    if (currentIndex < items.length) {
+                        items[currentIndex].classList.add('active');
+                        
+                        // Update hero banner with this product
+                        const productId = items[currentIndex].getAttribute('data-id');
+                        // Keep products in their natural order (no sorting)
+                        const products = window.firebaseProducts ? Object.values(window.firebaseProducts) : [];
+                        const product = products.find(p => p.id == productId);
+                        if (product) {
+                            updateHeroBanner(product);
+                        }
+                    }
+                }
+            }
+            
+            // Update items and carousel when products are rendered
+            const observer = new MutationObserver(function() {
+                updateItems();
+                updateCarousel();
+            });
+            
+            observer.observe(carousel, { childList: true, subtree: true });
+            
+            // Initial update
+            setTimeout(function() {
+                updateItems();
+                updateCarousel();
+            }, 200); // Delay to ensure items are rendered
+            
+            // Update carousel on window resize
+            window.addEventListener('resize', function() {
+                updateItems();
+                updateCarousel();
+            });
+        }
+        
+        // Product dropdown menu
+        const productDropdown = document.querySelector('.dropdown-container');
+        if (productDropdown) {
+            const productLink = productDropdown.querySelector('a');
+            const dropdownMenu = productDropdown.querySelector('.dropdown-menu');
+            
+            productLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                dropdownMenu.classList.toggle('show');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!productDropdown.contains(e.target)) {
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+            
+            // Handle category selection
+            dropdownMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const category = this.getAttribute('data-category');
+                    console.log('Selected category:', category);
+                    dropdownMenu.classList.remove('show');
+                });
+            });
+        }
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function() {
+                if (typeof window.logout === 'function') {
+                    window.logout();
+                } else {
+                    // Fallback logout
+                    localStorage.removeItem('currentUser');
+                    window.location.href = 'login.html';
+                }
+            });
+        }
+    });
+    </script>
+</body>
+</html>
