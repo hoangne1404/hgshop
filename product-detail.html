@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết sản phẩm - HgShop</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+
+        // Import Firebase config
+        import "./firebase-config.js";
+
+        // Initialize Firebase
+        const app = initializeApp(window.firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Make Firebase objects globally available
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDatabase = database;
+
+        // Authentication state listener
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Load user data
+                const userRef = ref(database, 'users/' + user.uid);
+                onValue(userRef, (snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        // Save user data to localStorage
+                        localStorage.setItem('currentUser', JSON.stringify({
+                            uid: user.uid,
+                            email: user.email,
+                            ...userData
+                        }));
+                    }
+                });
+            }
+        });
+    </script>
+    
+    <script defer src="auth.js"></script>
+    <script defer src="script.js"></script>
+    <script defer src="cart.js"></script>
+</head>
+<body>
+    <!-- Notification Tooltip -->
+    <div id="notifyTooltip" class="tooltip hidden">
+        <div class="tooltip-header">
+            <h3>Thông báo</h3>
+            <button id="closeNotify" class="close-btn">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div id="notificationList" class="notification-list">
+            <p>Không có thông báo mới</p>
+        </div>
+    </div>
+    
+    <!-- Header -->
+    <header class="navbar">
+        <div class="logo">
+            <a href="index.html" style="color: white; text-decoration: none;">HgShop</a>
+        </div>
+        
+        <nav class="nav-links">
+            <a href="index.html">Trang chủ</a>
+            <a href="products.html">Sản phẩm</a>
+            <a href="contact.html">Liên hệ</a>
+        </nav>
+        
+        <div class="topbar-icons">
+            <button id="notifyBtn" class="icon-btn">
+                <span class="material-icons">notifications</span>
+                <span id="notificationBadge" class="badge">0</span>
+            </button>
+            
+            <button id="cartBtn" class="icon-btn">
+                <span class="material-icons cart-icon">shopping_cart</span>
+                <span id="cartCount" class="badge">0</span>
+            </button>
+            
+            <div class="avatar-wrapper">
+                <img id="avatarIcon" src="images/default-avatar.png" alt="Avatar" class="avatar-icon">
+            </div>
+        </div>
+    </header>
+
+    <!-- Account Menu -->
+    <div id="accountMenu" class="account-menu hidden">
+        <a href="profile.html" class="menu-item">
+            <span class="material-icons">person</span>
+            Tài khoản của tôi
+        </a>
+        <a href="orders.html" class="menu-item">
+            <span class="material-icons">receipt</span>
+            Đơn hàng của bạn
+        </a>
+        <a id="becomeSellerLink" href="become-seller.html" class="menu-item">
+            <span class="material-icons">store</span>
+            <span id="sellerMenuText">Trở thành người bán</span>
+        </a>
+        <hr>
+        <button id="logoutBtn" class="menu-item logout">
+            <span class="material-icons">logout</span>
+            <span>Đăng xuất</span>
+        </button>
+    </div>
+
+    <main class="container narrow">
+        <div id="productDetail" class="card">
+            <!-- Nội dung sẽ được điền bằng JavaScript -->
+        </div>
+    </main>
+
+    <!-- Cart Sidebar -->
+    <div id="cartSidebar" class="cart-sidebar hidden">
+        <div class="cart-header">
+            <h3>Giỏ hàng</h3>
+            <button id="closeCart" class="close-btn">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div id="cartItems" class="cart-items">
+            <!-- Cart items will be populated here -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Tổng cộng:</span>
+                <span id="cartTotal">0đ</span>
+            </div>
+            <button id="checkoutBtn" class="btn primary">Thanh toán</button>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay" class="overlay hidden"></div>
+
+    <!-- About / Footer -->
+    <section class="about-section" id="contact">
+        <div class="container narrow">
+            <h2>Giới thiệu về HgShop</h2>
+            <p>HgShop là nền tảng mua sắm linh kiện máy tính, laptop và phụ kiện công nghệ chất lượng.</p>
+            
+            <div class="about-content">
+                <div class="about-info">
+                    <p><strong>Mua bán linh kiện máy tính, laptop uy tín chất lượng</strong></p>
+                    <ul>
+                        <li>🏠 Địa chỉ: 18 Louis VI, Hoàng Mai, Hoàng Văn Thụ, Hà Nội</li>
+                        <li>📞 Số điện thoại: 0343867095</li>
+                        <li>👤 Thành viên: Nguyễn Nhật Hoàng<br>📧 Gmail: nguyennhathoangne@gmail.com</li>
+                    </ul>
+                </div>
+                
+                <div class="about-links">
+                    <div class="footer-section">
+                        <h4>Liên kết</h4>
+                        <ul>
+                            <li><a href="index.html">Trang chủ</a></li>
+                            <li><a href="terms.html">Điều khoản</a></li>
+                            <li><a href="privacy.html">Bảo mật</a></li>
+                            <li><a href="contact.html">Liên hệ</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4>Theo dõi chúng tôi</h4>
+                        <div class="social-links">
+                            <a href="https://www.facebook.com/hvoaanng" target="_blank" class="social-link">
+                                <span class="material-icons">facebook</span>
+                            </a>
+                            <a href="https://www.instagram.com/hgne1404" target="_blank" class="social-link">
+                                <span class="material-icons">photo_camera</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <p>© 2025 HgShop. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Đợi cho DOM load hoàn toàn và script.js đã chạy
+        document.addEventListener('DOMContentLoaded', function() {
+            // Lấy ID sản phẩm từ URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = parseInt(urlParams.get('id'));
+
+            // Load product detail directly from Firebase
+            loadProductDetail(productId);
+
+            // Hàm mua ngay
+            window.buyNow = function(productId) {
+                // Add product to cart with complete information
+                const productElement = document.querySelector('.product-detail');
+                if (productElement) {
+                    // Get product information from the current page
+                    const name = document.querySelector('.product-info h1').textContent;
+                    const priceText = document.querySelector('.price').textContent;
+                    const price = parseInt(priceText.replace(/\D/g, ''));
+                    const imageElement = document.querySelector('.main-image');
+                    const image = imageElement ? imageElement.src : 'images/default-product.png';
+                    
+                    // Extract just the filename from the image path if it's a local image
+                    let imageFilename = 'default-product.png';
+                    if (image.includes('images/sanpham/')) {
+                        imageFilename = image.split('images/sanpham/').pop();
+                    } else if (image.includes('http')) {
+                        // Keep full URL for external images
+                        imageFilename = image;
+                    } else {
+                        // Extract just the filename for other cases
+                        imageFilename = image.split('/').pop();
+                    }
+                    
+                    // Get current cart from localStorage
+                    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+                    
+                    // Check if product already exists in cart
+                    const existingItemIndex = cart.findIndex(item => item.id === productId);
+                    
+                    if (existingItemIndex >= 0) {
+                        // Update quantity
+                        cart[existingItemIndex].qty += 1;
+                    } else {
+                        // Add new item with complete information
+                        const newItem = {
+                            id: productId,
+                            name: name,
+                            price: price,
+                            image: imageFilename,
+                            qty: 1
+                        };
+                        cart.push(newItem);
+                    }
+                    
+                    // Save updated cart to localStorage
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    
+                    // Update cart count
+                    updateCartCount();
+                }
+                
+                // Chuyển đến trang thanh toán
+                setTimeout(() => {
+                    window.location.href = 'checkout.html';
+                }, 100);
+            };
+
+            // Hàm hiển thị form đánh giá
+            window.showReviewForm = function() {
+                // Check if user is logged in via localStorage first
+                const cur = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (!cur) {
+                    alert('Vui lòng đăng nhập để đánh giá sản phẩm');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Kiểm tra xem người dùng đã mua sản phẩm này và đơn hàng đã hoàn thành chưa
+                // Trong thực tế, sẽ kiểm tra từ Firebase
+                const hasPurchasedAndCompleted = true; // For demo purposes
+
+                if (!hasPurchasedAndCompleted) {
+                    alert('Chỉ khách hàng đã mua và nhận hàng sản phẩm này mới có thể đánh giá.');
+                    return;
+                }
+
+                // Tạo modal đánh giá
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 500px; width: 90%;">
+                        <div class="modal-header">
+                            <h3>Đánh giá sản phẩm</h3>
+                            <span class="close">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label>Đánh giá của bạn:</label>
+                                <div id="ratingStars" style="font-size: 36px; color: #ccc; cursor: pointer; user-select: none;">
+                                    <span data-rating="1">☆</span>
+                                    <span data-rating="2">☆</span>
+                                    <span data-rating="3">☆</span>
+                                    <span data-rating="4">☆</span>
+                                    <span data-rating="5">☆</span>
+                                </div>
+                                <input type="hidden" id="selectedRating" value="0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="reviewComment">Nhận xét:</label>
+                                <textarea id="reviewComment" class="form-control" rows="4" placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <button id="submitReview" class="btn primary" style="width: 100%;">Gửi đánh giá</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Xử lý chọn sao đánh giá
+                const stars = modal.querySelectorAll('#ratingStars span');
+                stars.forEach(star => {
+                    star.addEventListener('click', function() {
+                        const rating = parseInt(this.getAttribute('data-rating'));
+                        document.getElementById('selectedRating').value = rating;
+                        
+                        stars.forEach((s, index) => {
+                            s.textContent = index < rating ? '★' : '☆';
+                            s.style.color = index < rating ? '#ffa500' : '#ccc';
+                        });
+                    });
+                    
+                    // Hiệu ứng hover
+                    star.addEventListener('mouseenter', function() {
+                        const rating = parseInt(this.getAttribute('data-rating'));
+                        stars.forEach((s, index) => {
+                            s.style.color = index < rating ? '#ffa500' : '#ccc';
+                        });
+                    });
+                });
+                
+                // Reset màu khi rời khỏi khu vực đánh giá
+                const ratingStars = document.getElementById('ratingStars');
+                ratingStars.addEventListener('mouseleave', function() {
+                    const selectedRating = parseInt(document.getElementById('selectedRating').value);
+                    stars.forEach((s, index) => {
+                        s.textContent = index < selectedRating ? '★' : '☆';
+                        s.style.color = index < selectedRating ? '#ffa500' : '#ccc';
+                    });
+                });
+                
+                // Xử lý đóng modal
+                const closeBtn = modal.querySelector('.close');
+                closeBtn.onclick = () => {
+                    document.body.removeChild(modal);
+                };
+                
+                // Đóng modal khi click ngoài nội dung
+                modal.onclick = function(event) {
+                    if (event.target === modal) {
+                        document.body.removeChild(modal);
+                    }
+                };
+                
+                // Xử lý gửi đánh giá
+                document.getElementById('submitReview').onclick = async function() {
+                    const rating = parseInt(document.getElementById('selectedRating').value);
+                    const comment = document.getElementById('reviewComment').value.trim();
+                    
+                    if (rating === 0) {
+                        alert('Vui lòng chọn số sao đánh giá');
+                        return;
+                    }
+                    
+                    if (!comment) {
+                        alert('Vui lòng nhập nhận xét');
+                        return;
+                    }
+                    
+                    try {
+                        // Use localStorage as a fallback
+                        const reviewData = {
+                            userId: cur.uid,
+                            userName: cur.name || 'Ẩn danh',
+                            rating: rating,
+                            comment: comment,
+                            date: new Date().toISOString(),
+                            productId: productId
+                        };
+                        
+                        // Save to localStorage
+                        let reviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
+                        reviews.push(reviewData);
+                        localStorage.setItem('productReviews', JSON.stringify(reviews));
+                        
+                        alert('Cảm ơn bạn đã đánh giá sản phẩm!');
+                        document.body.removeChild(modal);
+                        
+                        // Update the reviews display immediately
+                        displayReviews(reviews.filter(review => review.productId === productId));
+                        
+                        // Update the product rating display
+                        updateProductRating(productId);
+                    } catch (error) {
+                        console.error('Error submitting review:', error);
+                        alert('Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại sau.');
+                    }
+                };
+            };
+
+            // Wait for Firebase to be fully initialized
+            function waitForFirebase() {
+                return new Promise((resolve, reject) => {
+                    let attempts = 0;
+                    const maxAttempts = 50; // 5 seconds max wait time
+                    
+                    const checkFirebase = () => {
+                        attempts++;
+                        if (window.firebaseApp && window.firebaseAuth && window.firebaseDatabase) {
+                            resolve();
+                        } else if (attempts >= maxAttempts) {
+                            reject(new Error('Firebase initialization timeout'));
+                        } else {
+                            setTimeout(checkFirebase, 100);
+                        }
+                    };
+                    
+                    checkFirebase();
+                });
+            }
+
+            // Hàm cập nhật hiển thị đánh giá sản phẩm
+            function updateProductRating(reviews) {
+                // Calculate average rating
+                if (reviews.length > 0) {
+                    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+                    const avgRating = totalRating / reviews.length;
+                    
+                    // Update the rating display in the product info section
+                    const ratingElement = document.querySelector('.product-info .rating');
+                    if (ratingElement) {
+                        ratingElement.innerHTML = `
+                            ${'★'.repeat(Math.floor(avgRating))}${'☆'.repeat(5 - Math.floor(avgRating))}
+                            <span>(${reviews.length} đánh giá)</span>
+                        `;
+                    }
+                }
+            }
+            
+            // Function to get local sales count for a product
+            function getLocalSalesCount(productId) {
+                try {
+                    let localSales = JSON.parse(localStorage.getItem('localProductSales') || '{}');
+                    return localSales[productId] || 0;
+                } catch (error) {
+                    console.error('Error getting local sales count:', error);
+                    return 0;
+                }
+            }
+
+            // Hàm tải chi tiết sản phẩm
+            async function loadProductDetail(productId) {
+                try {
+                    if (window.firebaseDatabase) {
+                        const { ref, get } = await import("https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js");
+                        
+                        // Get product data from Firebase
+                        const productRef = ref(window.firebaseDatabase, 'products/' + productId);
+                        const snapshot = await get(productRef);
+                        const product = snapshot.val();
+                        
+                        if (!product) {
+                            document.getElementById('productDetail').innerHTML = '<p>Sản phẩm không tồn tại.</p>';
+                            return;
+                        }
+
+                        // Cập nhật tiêu đề trang
+                        document.title = product.name + ' - HgShop';
+
+                        // Render chi tiết sản phẩm
+                        document.getElementById('productDetail').innerHTML = `
+                            <div class="product-detail">
+                                <div class="product-images">
+                                    <img src="${product.image.startsWith('http') ? product.image : 'images/sanpham/' + product.image}" 
+                                        alt="${product.name}" class="main-image" onerror="this.src='images/default-product.png'">
+                                    <div class="thumbnail-images">
+                                        <img src="${product.image.startsWith('http') ? product.image : 'images/sanpham/' + product.image}" 
+                                            alt="${product.name}" class="thumbnail active" onerror="this.src='images/default-product.png'">
+                                    </div>
+                                </div>
+                                <div class="product-info">
+                                    <h1>${product.name}</h1>
+                                    <div class="rating" id="productRating">
+                                        ${'★'.repeat(Math.floor(product.rating || 0))}${'☆'.repeat(5 - Math.floor(product.rating || 0))}
+                                        <span>(${product.reviews && product.reviews.length || 0} đánh giá)</span>
+                                    </div>
+                                    <div class="price">${parseInt(product.price).toLocaleString('vi-VN')} ₫</div>
+                                    <p class="description">${product.description || 'Không có mô tả.'}</p>
+                                    
+                                    <div class="specifications">
+                                        <h3>Thông số kỹ thuật</h3>
+                                        <ul>
+                                            ${(product.specifications || []).map(spec => `<li>${spec}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="stock-status ${product.quantity > 0 ? 'in-stock' : 'out-of-stock'}">
+                                        ${product.quantity > 0 ? `Còn hàng (${product.quantity} sản phẩm)` : 'Hết hàng'}
+                                    </div>
+                                    
+                                    <!-- Display sales information -->
+                                    <div class="sales-info">
+                                        Đã bán: ${product.sales || getLocalSalesCount(product.id) || 0} sản phẩm
+                                    </div>
+                                    
+                                    <div class="actions">
+                                        <button class="btn primary" onclick="buyNow(${product.id})">
+                                            <span class="material-icons">shopping_cart</span>
+                                            Mua ngay
+                                        </button>
+                                        <button class="btn secondary" onclick="window.addToCart(${product.id})" ${product.quantity <= 0 ? 'disabled' : ''}>
+                                            <span class="material-icons">add_shopping_cart</span>
+                                            Thêm vào giỏ
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="product-reviews">
+                                <h3>Đánh giá sản phẩm</h3>
+                                <button class="btn secondary" onclick="showReviewForm()" style="margin-bottom: 20px;">
+                                    Viết đánh giá
+                                </button>
+                                <div id="reviewsContainer">
+                                    <!-- Reviews will be loaded here -->
+                                </div>
+                            </div>
+                        `;
+
+                        // Load reviews
+                        loadReviews(productId);
+                    } else {
+                        document.getElementById('productDetail').innerHTML = '<p>Không thể kết nối đến cơ sở dữ liệu.</p>';
+                    }
+                } catch (error) {
+                    console.error('Error loading product detail:', error);
+                    document.getElementById('productDetail').innerHTML = '<p>Có lỗi xảy ra khi tải thông tin sản phẩm.</p>';
+                }
+            }
+
+            // Hàm tải đánh giá
+            async function loadReviews(productId) {
+                try {
+                    // First try to load from localStorage
+                    let reviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
+                    reviews = reviews.filter(review => review.productId === productId);
+                    
+                    // Display localStorage reviews immediately
+                    displayReviews(reviews);
+                    
+                    // Update product rating display
+                    updateProductRating(reviews);
+                    
+                    // If we have Firebase, also load from there
+                    if (window.firebaseDatabase) {
+                        try {
+                            const { ref, onValue } = await import("https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js");
+                            
+                            const reviewsRef = ref(window.firebaseDatabase, 'reviews');
+                            onValue(reviewsRef, (snapshot) => {
+                                const reviewsData = snapshot.val();
+                                if (reviewsData) {
+                                    const firebaseReviews = Object.values(reviewsData).filter(review => 
+                                        review.productId === productId
+                                    );
+                                    // Combine with localStorage reviews and remove duplicates
+                                    const allReviews = [...reviews, ...firebaseReviews];
+                                    const uniqueReviews = Array.from(new Set(allReviews.map(r => r.date)))
+                                        .map(date => {
+                                            return allReviews.find(r => r.date === date);
+                                        });
+                                    displayReviews(uniqueReviews);
+                                    
+                                    // Update product rating display again with combined reviews
+                                    updateProductRating(uniqueReviews);
+                                }
+                            });
+                        } catch (firebaseError) {
+                            console.error('Error loading reviews from Firebase:', firebaseError);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading reviews:', error);
+                }
+            }
+
+            // Hàm hiển thị đánh giá
+            function displayReviews(reviews) {
+                const container = document.getElementById('reviewsContainer');
+                if (reviews.length === 0) {
+                    container.innerHTML = '<p>Chưa có đánh giá nào cho sản phẩm này.</p>';
+                    return;
+                }
+
+                container.innerHTML = reviews.map(review => `
+                    <div class="review">
+                        <div class="review-header">
+                            <strong>${review.userName}</strong>
+                            <span>${new Date(review.date).toLocaleDateString('vi-VN')}</span>
+                        </div>
+                        <div class="review-rating">
+                            ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                        </div>
+                        <p>${review.comment}</p>
+                    </div>
+                `).join('');
+            }
+        });
+    </script>
+</body>
+</html>
